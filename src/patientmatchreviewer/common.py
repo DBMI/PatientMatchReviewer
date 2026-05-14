@@ -1,15 +1,15 @@
 """
 Collection of static utility methods.
 """
+
 import errno
 import logging
 import os
 import re
 import sys
 import tempfile
-from contextlib import nullcontext
-from pathlib import Path
 from configparser import ConfigParser, ExtendedInterpolation
+from pathlib import Path
 
 import pywintypes
 import win32api
@@ -209,6 +209,7 @@ def get_temp_directory() -> str | None:
         else:
             return None
 
+
 # https://stackoverflow.com/a/25868839/20241849
 def is_writable(path_to_test: str) -> bool:
     """
@@ -300,7 +301,9 @@ def resource_path(relative_path: str) -> str:
     return str(os.path.join(base_path, relative_path))
 
 
-def write_config(config: ConfigParser, log: logging.Logger, config_file: str = "") -> None:
+def write_config(
+    config: ConfigParser, log: logging.Logger, config_file: str = ""
+) -> None:
     """
     Initializes config file with default values.
 

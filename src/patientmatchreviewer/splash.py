@@ -1,6 +1,7 @@
 """
 Contains MySplashScreen class.
 """
+
 import wx
 import wx.adv
 
@@ -32,6 +33,8 @@ class MySplashScreen(wx.adv.SplashScreen):
 
 if __name__ == "__main__":
     app: wx.App = wx.App()
-    splash_frame: MySplashScreen = MySplashScreen(r"UCSD_school_of_medicine.png")
+    splash_frame: MySplashScreen = MySplashScreen(
+        r"../../pictures/UCSD_school_of_medicine.png"
+    )
     splash_frame.Show()
     app.MainLoop()

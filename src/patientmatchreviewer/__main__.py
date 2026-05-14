@@ -1,15 +1,18 @@
 """
 Main routine--creates Patient Match Reviewer GUI.
 """
+
 import argparse
 import logging
 import os
+
 import wx.adv
 
-from src.patientmatchreviewer.common import get_logging_directory, resource_path
+from src.patientmatchreviewer.common import (get_logging_directory,
+                                             resource_path)
 from src.patientmatchreviewer.my_logging import setup_logging
-from src.patientmatchreviewer.splash import MySplashScreen
 from src.patientmatchreviewer.reviewer_gui import ReviewerGui
+from src.patientmatchreviewer.splash import MySplashScreen
 
 if __name__ == "__main__":
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
@@ -20,11 +23,12 @@ if __name__ == "__main__":
     )
 
     # Find directory in which we're allowed to write log file.
-    logging_dir: str|None = get_logging_directory(suggested_dir=os.getcwd())
+    logging_dir: str | None = get_logging_directory(suggested_dir=os.getcwd())
 
     if logging_dir:
         log: logging.Logger = setup_logging(
-            log_filename=os.path.join(logging_dir, "patientmatchreviewer.log"))
+            log_filename=os.path.join(logging_dir, "patientmatchreviewer.log")
+        )
         args = parser.parse_args()
 
         if args.log_level and args.log_level in [
@@ -40,7 +44,7 @@ if __name__ == "__main__":
 
         # Display splash screen.
         app: wx.App = wx.App(redirect=False)
-        splash = MySplashScreen(resource_path("UCSD_school_of_medicine.png"))
+        splash = MySplashScreen(resource_path("pictures/UCSD_school_of_medicine.png"))
         splash.Show()
         app.Yield()
 

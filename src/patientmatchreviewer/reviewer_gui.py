@@ -3,14 +3,16 @@ Module: Contains class ReviewerGui, which creates the GUI
         users can use to review patient matching data.
 """
 
-from configparser import ConfigParser
 import logging
 import os
+import time
+from configparser import ConfigParser
+from pathlib import Path
+from tkinter import filedialog
+
 import pandas
 import wx
 import wx.adv
-from pathlib import Path
-from tkinter import filedialog
 
 from src.patientmatchreviewer.common import get_config, resource_path, write_config
 from src.patientmatchreviewer.wobbler import MatchDecision, Wobbler
@@ -58,7 +60,7 @@ class ReviewerGui(wx.Dialog):
             14,
             family=wx.FONTFAMILY_ROMAN,
             style=wx.FONTSTYLE_NORMAL,
-            weight=wx.FONTWEIGHT_NORMAL
+            weight=wx.FONTWEIGHT_NORMAL,
         )
 
         # Create grid.
@@ -68,11 +70,8 @@ class ReviewerGui(wx.Dialog):
         self.__control_row: int = 0
         self.__add_title(label="Review possible patient matches")
 
-        # Dictionaries of controls linking labels with their DataFrame fields.
-        self.__labels_and_fields: dict = {}
-
         # Where to find image files.
-        self.__image_directory: str = resource_path(r'..\..\pictures')
+        self.__image_directory: str = resource_path(r"pictures")
         #
         #   LOAD BUTTON
         #
@@ -93,20 +92,19 @@ class ReviewerGui(wx.Dialog):
         #   RECORD COMPARISON
         #
         self.__add_header_row()
-        self.__add_commparison_row(data_field="GIVEN_NAME")
-        self.__add_commparison_row(data_field="FAMILY_NAME")
-        self.__add_commparison_row(data_field="DOB")
-        self.__add_commparison_row(data_field="ADDR1")
-        self.__add_commparison_row(data_field="PHONE1")
-        self.__add_commparison_row(data_field="PHONE2")
+        self.__text_controls: dict[str, wx.StaticText] = {}
+        self.__add_comparison_row(data_field="GIVEN_NAME")
+        self.__add_comparison_row(data_field="FAMILY_NAME")
+        self.__add_comparison_row(data_field="DOB")
+        self.__add_comparison_row(data_field="ADDR1")
+        self.__add_comparison_row(data_field="PHONE1")
+        self.__add_comparison_row(data_field="PHONE2")
         self.__add_single_info(data_field="TOTAL_SCORE")
         #
         #   DECISION BUTTONS
         #
-        self.__match_button: wx.Button
-        self.__no_match_button: wx.Button
-        self.__meh_button: wx.Button
-        self.__add_decision_buttons()
+        self.__radio_box: wx.RadioBox
+        self.__add_decision_radiobuttons()
         #
         #   NAVIGATION BUTTONS
         self.__left_button: wx.Button
@@ -137,7 +135,7 @@ class ReviewerGui(wx.Dialog):
         self.Fit()
         self.ShowModal()
 
-    def __add_commparison_row(self, data_field: str) -> None:
+    def __add_comparison_row(self, data_field: str) -> None:
         """
             Create comparison row like "FAMILY NAME:    Smith   Smyth   79"
 
@@ -145,143 +143,127 @@ class ReviewerGui(wx.Dialog):
         ----------
         data_field:     Root name for what the dataframe calls these three data elements
                         For example, if "dob", the dataframe should contain columns
-                                "DOB AOU"
-                                "DOB OMOP"
-                                "DOB SCORE"
+                                "DOB_AOU"
+                                "DOB_OMOP"
+                                "DOB_SCORE"
         Returns
         -------
         none
         """
+        # Build grid to hold row's objects.
+        [containing_panel, row_grid] = self.__build_row(data_field=data_field)
         #
         #   The element name ("ADDR1")
         #
         control_label: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label= data_field
+            containing_panel, style=wx.TRANSPARENT_WINDOW, label=data_field
         )
-        self.__my_grid.Add(control_label, pos=(self.__control_row, 0), flag=wx.ALIGN_LEFT, border=5)
+        row_grid.Add(control_label, pos=(1, 0), flag=wx.ALIGN_LEFT, border=5)
         #
-        #   The AOU value ("ADDR1_AOU")
+        #   The AOU value ("ADDR1 AOU")
         #
         control_label_aou: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label= "AOU"
+            containing_panel, style=wx.TRANSPARENT_WINDOW, label="AOU"
         )
-        self.__my_grid.Add(control_label_aou, pos=(self.__control_row, 1), flag=wx.ALIGN_LEFT, border=5)
-
-        # Register this control against this data field.
-        self.__labels_and_fields[data_field + "_AOU"] = control_label_aou
+        row_grid.Add(control_label_aou, pos=(1, 1), flag=wx.ALIGN_LEFT, border=5)
+        self.__text_controls[data_field + "_AOU"] = control_label_aou
         #
-        #   The OMOP value ("ADDR1_OMOP")
+        #   The OMOP value ("ADDR1 OMOP")
         #
         control_label_omop: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label="OMOP"
+            containing_panel, style=wx.TRANSPARENT_WINDOW, label="OMOP"
         )
-        self.__my_grid.Add(control_label_omop, pos=(self.__control_row, 2), flag=wx.ALIGN_LEFT, border=5)
-
-        # Register this control against this data field.
-        self.__labels_and_fields[data_field + "_OMOP"] = control_label_omop
+        row_grid.Add(control_label_omop, pos=(1, 2), flag=wx.ALIGN_LEFT, border=5)
+        self.__text_controls[data_field + "_OMOP"] = control_label_omop
         #
         #   The score ("ADDR1 SCORE")
-        #
         control_label_score: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label="SCORE"
+            containing_panel, style=wx.TRANSPARENT_WINDOW, label="SCORE"
         )
-        self.__my_grid.Add(control_label_score, pos=(self.__control_row, 3), flag=wx.ALIGN_RIGHT, border=5)
+        row_grid.Add(control_label_score, pos=(1, 3), flag=wx.ALIGN_LEFT, border=5)
+        self.__text_controls[data_field + "_SCORE"] = control_label_score
 
-        # Register this control against this data field.
-        self.__labels_and_fields[data_field + "_SCORE"] = control_label_score
+        # Connect grid sizer to panel.
+        containing_panel.SetSizerAndFit(row_grid)
+
         self.__control_row += 1
 
-    def __add_decision_buttons(self) -> None:
-        #
-        #   MATCH BUTTON
-        #
-        self.__match_button: wx.Button = wx.Button(
+    def __add_decision_radiobuttons(self) -> None:
+        choices: list[str] = list(MatchDecision)
+
+        self.__radio_box = wx.RadioBox(
             self.__my_panel,
-            id=wx.ID_ANY,
-            label="MATCH",
-            size=wx.Size(110, 40),
-            style=wx.BORDER_SUNKEN,
+            label="Classify the possible match",
+            choices=choices[:3],
+            majorDimension=1,
+            style=wx.RA_SPECIFY_COLS,
         )
-        #self.__match_button.SetFont(small_font)
-        self.__match_button.SetBackgroundColour(wx.Colour(255, 255, 255))
-        self.__match_button.Disable()
-        self.__my_grid.Add(self.__match_button, pos=(self.__control_row, 0), flag=wx.ALL, border=2)
-        self.__match_button.Bind(wx.EVT_BUTTON, self.__on_match)
+        self.Bind(wx.EVT_RADIOBOX, self.__on_box_select, self.__radio_box)
+
+        # Not until we load data.
+        self.__radio_box.Disable()
+
+        # Leave extra row
         self.__control_row += 1
-        #
-        #   NO MATCH BUTTON
-        #
-        self.__no_match_button: wx.Button = wx.Button(
-            self.__my_panel,
-            id=wx.ID_ANY,
-            label="NO MATCH",
-            size=wx.Size(110, 40),
-            style=wx.BORDER_SUNKEN,
+        self.__my_grid.Add(
+            self.__radio_box, pos=(self.__control_row, 0), flag=wx.ALIGN_LEFT, border=5
         )
-        #self.__no_match_button.SetFont(small_font)
-        self.__no_match_button.SetBackgroundColour(wx.Colour(255, 255, 255))
-        self.__no_match_button.Disable()
-        self.__my_grid.Add(self.__no_match_button, pos=(self.__control_row, 0), flag=wx.ALL, border=2)
-        self.__no_match_button.Bind(wx.EVT_BUTTON, self.__on_no_match)
-        self.__control_row +=1
-        #
-        #   MEH BUTTON
-        #
-        self.__meh_button: wx.Button = wx.Button(
-            self.__my_panel,
-            id=wx.ID_ANY,
-            label="UNSURE",
-            size=wx.Size(110, 40),
-            style=wx.BORDER_SUNKEN,
-        )
-        #self.__meh_button.SetFont(small_font)
-        self.__meh_button.SetBackgroundColour(wx.Colour(255, 255, 255))
-        self.__meh_button.Disable()
-        self.__my_grid.Add(self.__meh_button, pos=(self.__control_row, 0), flag=wx.ALL, border=2)
-        self.__meh_button.Bind(wx.EVT_BUTTON, self.__on_meh)
         self.__control_row += 1
 
     def __add_header_row(self) -> None:
-        """ Create header for comparison block """
+        """Create header for comparison block"""
 
-        # Force columns to be at least a certain size.
-        self.__my_grid.Add(width=120, height=10, pos=(self.__control_row, 1),flag=wx.ALIGN_CENTER_HORIZONTAL, border=5)
-        self.__my_grid.Add(width=120, height=10, pos=(self.__control_row, 2),flag=wx.ALIGN_CENTER_HORIZONTAL, border=5)
-        self.__control_row += 1
+        [containing_panel, row_grid] = self.__build_row(data_field="header")
         #
         #   The element name ("ADDR1")
         #
-        control_label: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label= "Element"
+        control_label: wx.StaticText = wx.StaticText(containing_panel, label="Element")
+        row_grid.Add(
+            control_label,
+            pos=(1, 0),
+            flag=wx.ALIGN_LEFT,
+            border=5,
         )
-        self.__my_grid.Add(control_label, pos=(self.__control_row, 0), flag=wx.ALIGN_LEFT, border=5)
         #
         #   The AOU value ("ADDR1_AOU")
         #
-        control_label_aou: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label= "AoU"
-        )
-        self.__my_grid.Add(control_label_aou, pos=(self.__control_row, 1), flag=wx.ALIGN_LEFT, border=5)
+        control_label_aou: wx.StaticText = wx.StaticText(containing_panel, label="AoU")
+        row_grid.Add(control_label_aou, pos=(1, 1), flag=wx.ALIGN_LEFT, border=5)
         #
         #   The OMOP value ("ADDR1_OMOP")
         #
         control_label_omop: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label="OMOP"
+            containing_panel, label="OMOP"
         )
-        self.__my_grid.Add(control_label_omop, pos=(self.__control_row, 2), flag=wx.ALIGN_LEFT, border=5)
+        row_grid.Add(
+            control_label_omop,
+            pos=(1, 2),
+            flag=wx.ALIGN_LEFT,
+            border=5,
+        )
         #
         #   The score ("ADDR1 SCORE")
         #
         control_label_score: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label="Score"
+            containing_panel, label="Score"
         )
-        self.__my_grid.Add(control_label_score, pos=(self.__control_row, 3), flag=wx.ALIGN_RIGHT, border=5)
-        self.__control_row += 1
-        self.__my_grid.Add(wx.StaticLine(self.__my_panel,size=wx.Size(400, 2)),
-                           pos=(self.__control_row, 0),
-                           span=(1,4),
-                           flag=wx.ALIGN_CENTER_HORIZONTAL,
-                           border=0)
+        row_grid.Add(
+            control_label_score,
+            pos=(1, 3),
+            flag=wx.ALIGN_LEFT,
+            border=5,
+        )
+        self.__my_grid.Add(
+            wx.StaticLine(self.__my_panel, size=wx.Size(600, 2)),
+            pos=(self.__control_row, 0),
+            span=(1, 4),
+            flag=wx.ALIGN_CENTER_HORIZONTAL,
+            border=0,
+        )
+
+        # Connect grid sizer to panel.
+        containing_panel.SetSizerAndFit(row_grid)
+
         self.__control_row += 1
 
     def __add_load_button(self) -> None:
@@ -294,20 +276,24 @@ class ReviewerGui(wx.Dialog):
         )
         load_button.SetBackgroundColour(wx.Colour(255, 255, 255))
         load_button.Enable()
-        self.__my_grid.Add(load_button,
-                           pos=(self.__control_row, 0),
-                           span=(1,4),
-                           flag=wx.ALIGN_CENTER_HORIZONTAL,
-                           border=5)
+        self.__my_grid.Add(
+            load_button,
+            pos=(self.__control_row, 0),
+            span=(1, 4),
+            flag=wx.ALIGN_CENTER_HORIZONTAL,
+            border=5,
+        )
         load_button.Bind(wx.EVT_BUTTON, self.__on_load_file)
         self.__control_row += 1
 
     def __add_navigation_buttons(self) -> None:
-        """ Builds left/right buttons """
+        """Builds left/right buttons"""
         #
         #   LEFT BUTTON
         #
-        img: wx.Image = wx.Image(os.path.join(self.__image_directory, 'left_arrow.png'), wx.BITMAP_TYPE_PNG)
+        img: wx.Image = wx.Image(
+            os.path.join(self.__image_directory, "left_arrow.png"), wx.BITMAP_TYPE_PNG
+        )
 
         if not img.IsOk():
             print("Failed to load image")
@@ -321,12 +307,16 @@ class ReviewerGui(wx.Dialog):
         )
         self.__left_button.SetBackgroundColour(wx.Colour(255, 255, 255))
         self.__left_button.Disable()
-        self.__my_grid.Add(self.__left_button, pos=(self.__control_row, 1), flag=wx.ALL, border=5)
+        self.__my_grid.Add(
+            self.__left_button, pos=(self.__control_row, 1), flag=wx.ALL, border=5
+        )
         self.__left_button.Bind(wx.EVT_BUTTON, self.__on_go_left)
         #
         #   RIGHT BUTTON
         #
-        img = wx.Image(os.path.join(self.__image_directory, 'right_arrow.png'), wx.BITMAP_TYPE_PNG)
+        img = wx.Image(
+            os.path.join(self.__image_directory, "right_arrow.png"), wx.BITMAP_TYPE_PNG
+        )
         self.__right_button: wx.BitmapButton = wx.BitmapButton(
             self.__my_panel,
             bitmap=wx.BitmapBundle.FromBitmap(wx.Bitmap(img)),
@@ -336,12 +326,14 @@ class ReviewerGui(wx.Dialog):
         )
         self.__right_button.SetBackgroundColour(wx.Colour(255, 255, 255))
         self.__right_button.Disable()
-        self.__my_grid.Add(self.__right_button, pos=(self.__control_row, 2), flag=wx.ALL, border=5)
+        self.__my_grid.Add(
+            self.__right_button, pos=(self.__control_row, 2), flag=wx.ALL, border=5
+        )
         self.__right_button.Bind(wx.EVT_BUTTON, self.__on_go_right)
         self.__control_row += 1
 
     def __add_progress_info(self) -> None:
-        """ Builds progress bar & label """
+        """Builds progress bar & label"""
 
         # PROGRESS TEXT
         self.__progress_text = wx.StaticText(self.__my_panel, id=wx.ID_ANY, label="-")
@@ -352,21 +344,23 @@ class ReviewerGui(wx.Dialog):
             flag=wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALL,
             border=5,
         )
-        self.__control_row +=1
+        self.__control_row += 1
 
         # PROGRESS BAR
-        self.__progress_gauge = wx.Gauge(self.__my_panel, range=100, size=wx.Size(300, 15))
+        self.__progress_gauge = wx.Gauge(
+            self.__my_panel, range=100, size=wx.Size(300, 15)
+        )
         self.__my_grid.Add(
             self.__progress_gauge,
             pos=(self.__control_row, 0),
-            span=(1,4),
+            span=(1, 4),
             flag=wx.EXPAND | wx.ALL,
             border=5,
         )
         self.__control_row += 1
 
     def __add_save_and_cancel_buttons(self) -> None:
-        """ Build save/cancel buttons """
+        """Build save/cancel buttons"""
         #
         #   WRITE BUTTON
         #
@@ -379,7 +373,9 @@ class ReviewerGui(wx.Dialog):
         )
         self.__save_button.SetBackgroundColour(wx.Colour(255, 255, 255))
         self.__save_button.Disable()
-        self.__my_grid.Add(self.__save_button, pos=(self.__control_row, 1), flag=wx.ALL, border=5)
+        self.__my_grid.Add(
+            self.__save_button, pos=(self.__control_row, 1), flag=wx.ALL, border=5
+        )
         self.__save_button.Bind(wx.EVT_BUTTON, self.__on_save)
         #
         #   CANCEL BUTTON
@@ -393,7 +389,9 @@ class ReviewerGui(wx.Dialog):
         )
         cancel_button.SetBackgroundColour(wx.Colour(255, 255, 255))
         cancel_button.Enable()
-        self.__my_grid.Add(cancel_button, pos=(self.__control_row, 2), flag=wx.ALL, border=5)
+        self.__my_grid.Add(
+            cancel_button, pos=(self.__control_row, 2), flag=wx.ALL, border=5
+        )
         cancel_button.Bind(wx.EVT_BUTTON, self.__on_cancel)
         self.__control_row += 1
 
@@ -413,19 +411,23 @@ class ReviewerGui(wx.Dialog):
         #   The element name ("MRN")
         #
         control_label: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label= data_field
+            self.__my_panel, id=wx.ID_ANY, label=data_field
         )
-        self.__my_grid.Add(control_label, pos=(self.__control_row, 0), flag=wx.ALIGN_LEFT, border=5)
+        self.__my_grid.Add(
+            control_label, pos=(self.__control_row, 0), flag=wx.ALIGN_LEFT, border=5
+        )
         #
         #   The value ("MRN")
         #
         control_label_value: wx.StaticText = wx.StaticText(
-            self.__my_panel, id=wx.ID_ANY, label= "-"
+            self.__my_panel, id=wx.ID_ANY, label="-"
         )
-        self.__my_grid.Add(control_label_value, pos=(self.__control_row, 1), flag=wx.EXPAND | wx.ALIGN_LEFT, border=5)
-
-        # Register this control against this data field.
-        self.__labels_and_fields[data_field] = control_label_value
+        self.__my_grid.Add(
+            control_label_value,
+            pos=(self.__control_row, 1),
+            flag=wx.EXPAND | wx.ALIGN_LEFT,
+            border=5,
+        )
         self.__control_row += 1
 
     def __add_title(self, label: str) -> None:
@@ -436,9 +438,6 @@ class ReviewerGui(wx.Dialog):
         ----------
         label: str
 
-        Returns
-        -------
-        None
         """
 
         # Title
@@ -458,22 +457,78 @@ class ReviewerGui(wx.Dialog):
             title_text,
             pos=(self.__control_row, 0),
             span=(1, 4),
-            flag= wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALL,
+            flag=wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL | wx.ALL,
             border=5,
         )
         self.__my_grid.AddGrowableCol(idx=1, proportion=1)
         self.__control_row += 1
 
+    def __build_row(self, data_field: str) -> tuple[wx.Panel, wx.GridBagSizer]:
+        """
+            Build a row to hold other controls.
+        Parameters
+        ----------
+        data_field
+
+        Returns tuple of
+        -------
+        containing_panel: wx.Panel
+        row_grid: wx.GridBagSizer
+        """
+        row_grid: wx.GridBagSizer = wx.GridBagSizer(hgap=5, vgap=5)
+        row_grid.Add(
+            width=200,
+            height=5,
+            pos=(0, 0),
+            flag=wx.ALIGN_CENTER_HORIZONTAL,
+            border=5,
+        )
+        row_grid.Add(
+            width=200,
+            height=5,
+            pos=(0, 1),
+            flag=wx.ALIGN_CENTER_HORIZONTAL,
+            border=5,
+        )
+        row_grid.Add(
+            width=200,
+            height=5,
+            pos=(0, 2),
+            flag=wx.ALIGN_CENTER_HORIZONTAL,
+            border=5,
+        )
+        row_grid.Add(
+            width=200,
+            height=5,
+            pos=(0, 3),
+            flag=wx.ALIGN_CENTER_HORIZONTAL,
+            border=5,
+        )
+
+        # Name the row's panel with the root name (so we can find it).
+        containing_panel: wx.Panel = wx.Panel(
+            self.__my_panel, size=wx.Size(400, 25), name=data_field
+        )
+        containing_panel.SetBackgroundColour(wx.Colour(255, 255, 255))
+        self.__my_grid.Add(
+            containing_panel,
+            pos=(self.__control_row, 0),
+            flag=wx.ALIGN_LEFT,
+            border=5,
+            span=(1, 4),
+        )
+
+        self.__control_row += 1
+        return containing_panel, row_grid
+
     def __enable_upon_load(self) -> None:
-        """ Once data loaded, allows us to enable navigation, decision buttons, etc."""
+        """Once data loaded, allows us to enable navigation, decision buttons, etc."""
         self.__right_button.Enable()
         self.__save_button.Enable()
-        self.__match_button.Enable()
-        self.__no_match_button.Enable()
-        self.__meh_button.Enable()
+        self.__radio_box.Enable()
 
     def __go_to_next_record(self) -> None:
-        """ Move to the next record."""
+        """Move to the next record."""
 
         if self.__row < len(self.df):
             self.__log.info("Go to next record.")
@@ -487,6 +542,56 @@ class ReviewerGui(wx.Dialog):
             self.__left_button.Enable()
             self.__populate_data()
             self.__update_progress()
+
+    @staticmethod
+    def __map_score_to_color(score: str) -> wx.Colour:
+        """
+        Convert score (0 to 100) to color (yellow to white).
+
+        Parameters
+        ----------
+        score: str
+
+        Returns
+        -------
+        color: wx.Colour
+        """
+        red: int = 255
+        green: int = 255
+        blue: int
+
+        # Score of 0 maps to blue = 0 ==> color is all yellow.
+        # Score of 100 maps to blue = 255 ==> color is white.
+        try:
+            blue = int(2.55 * int(score))
+        except ValueError:
+            blue = 0  # Fallback value
+
+        return wx.Colour(red, green, blue)
+
+    def __on_box_select(self, event: wx.CommandEvent) -> None:
+        """
+        Event handler for the radio box select.
+
+        Parameters
+        ----------
+        event
+
+        """
+        match_decision: MatchDecision = MatchDecision.NONE
+
+        match event.GetString():
+            case "MATCH":
+                match_decision = MatchDecision.MATCH
+
+            case "NO_MATCH":
+                match_decision = MatchDecision.NO_MATCH
+
+            case "UNSURE":
+                match_decision = MatchDecision.UNSURE
+
+        self.df.at[self.df.index[self.__row], "MATCH"] = match_decision
+        self.__go_to_next_record()
 
     def __on_cancel(self, event: wx.CommandEvent) -> None:
         """
@@ -560,8 +665,10 @@ class ReviewerGui(wx.Dialog):
         """
         initial_dir: Path = Path("/")
 
-        if self.__config.has_option('Settings', 'manual_decision_file_path'):
-            initial_dir = Path(self.__config['Settings']['manual_decision_file_path']).parent
+        if self.__config.has_option("Settings", "manual_decision_file_path"):
+            initial_dir = Path(
+                self.__config["Settings"]["manual_decision_file_path"]
+            ).parent
 
         # Open the file selection dialog.
         file_path: str = filedialog.askopenfilename(
@@ -576,7 +683,9 @@ class ReviewerGui(wx.Dialog):
 
             try:
                 # Read match file.
-                self.df = Wobbler.read_wobbler_file(match_file=file_path, log=self.__log)
+                self.df = Wobbler.read_wobbler_file(
+                    match_file=file_path, log=self.__log
+                )
 
                 if self.df.empty:
                     self.__log.error(f"Unable to read file {file_path}.")
@@ -646,43 +755,77 @@ class ReviewerGui(wx.Dialog):
 
         """
         # Synthesize new filename as <old file name>_reviewed.txt
-        full_file_path: Path = Path(self.__config['Settings']['manual_decision_file_path'])
+        full_file_path: Path = Path(
+            self.__config["Settings"]["manual_decision_file_path"]
+        )
         just_the_filename: str = full_file_path.stem
         ext: str = full_file_path.suffix
-        new_file: str = str(full_file_path.with_name(f"{just_the_filename}_reviewed{ext}"))
+        new_file: str = str(
+            full_file_path.with_name(f"{just_the_filename}_reviewed{ext}")
+        )
 
-        Wobbler.write_wobbler_file(match_file=new_file, df=self.df, log=self.__log)
+        if Wobbler.write_wobbler_file(match_file=new_file, df=self.df, log=self.__log):
+            wx.MessageBox(
+                f"Wrote {len(self.df)} records to {new_file}.",
+                "Info",
+                wx.OK | wx.ICON_INFORMATION,
+            )
 
     def __populate_data(self) -> None:
         """
-            Pushes the contents of the DataFrame into the controls.
+        Pushes the contents of the DataFrame into the controls.
         """
-        data_fields: list = list(self.__labels_and_fields.keys())
+        data_fields: list[str] = list(self.__text_controls)
 
         for data_field in data_fields:
             data_value: str = self.df[data_field].iloc[self.__row]
-            control_label: wx.StaticText = self.__labels_and_fields[data_field]
+            control_label: wx.StaticText = self.__text_controls[data_field]
+            control_label.SetLabel(data_value)
 
-            if control_label:
-                control_label.SetLabel(data_value)
+            # Determine background color based on the "SCORE" field.
+            if "SCORE" in data_field and not "TOTAL_SCORE" in data_field:
+                self.__shade_row_based_on_score(control_label)
+
+    def __shade_row_based_on_score(self, score_label: wx.StaticText) -> None:
+        """
+            Set BackgroundColour attribute of the panel linked to this score field.
+
+        Parameters
+        ----------
+        score_label: wx.StaticText
+        """
+        score_value: str = score_label.GetLabel()
+        background_color = self.__map_score_to_color(score_value)
+
+        # Find parent panel.
+        panel_this_row: wx.Panel = score_label.GetParent()
+
+        # Shade the row.
+        panel_this_row.SetBackgroundColour(background_color)
+        self.Refresh()
+        self.Update()
 
     def __update_progress(self) -> None:
         """
         Update progress bar & text.
         """
         self.__log.debug(f"Received low-level call to update progress.")
-        self.__progress_text.SetLabel(f"Processing {self.__row} of {len(self.df)} records.")
+        self.__progress_text.SetLabel(
+            f"Processing {self.__row} of {len(self.df)} records."
+        )
         pct: int = int(100.0 * self.__row / len(self.df))
         self.__progress_gauge.SetValue(pct)
 
     def __write_config(self) -> None:
         # 1. Initialize the parser
-        config = configparser.ConfigParser()
+        config = ConfigParser()
 
         # 2. Add a section and the file path
-        config.add_section('Settings')
-        config.set('Settings', 'manual_decision_file_directory', '/path/to/your/file.txt')
+        config.add_section("Settings")
+        config.set(
+            "Settings", "manual_decision_file_directory", "/path/to/your/file.txt"
+        )
 
         # 3. Save to a file named 'config.ini'
-        with open('config.ini', 'w') as configfile:
+        with open("config.ini", "w") as configfile:
             config.write(configfile)
