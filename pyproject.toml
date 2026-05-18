@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "patientmatchreviewer"
-version = "0.1.0"
+version = "0.2.0"
 description = "GUI to help user review possible patient matches."
 authors = ["Kevin J. Delaney <kjdelaney@health.ucsd.edu>"]
 license = """
