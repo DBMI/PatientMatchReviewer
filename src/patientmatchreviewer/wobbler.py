@@ -377,7 +377,7 @@ class Wobbler:
         )
         out += os.linesep
         out += "{0:10}  {1:30}   {2:30}   {3:>5}".format(
-            "last", row.GIVEN_NAME_AOU, row.GIVEN_NAME_OMOP, row.GIVEN_NAME_SCORE
+            "last", row.FAMILY_NAME_AOU, row.FAMILY_NAME_OMOP, row.FAMILY_NAME_SCORE
         )
         out += os.linesep
         out += "{0:10}  {1:30}   {2:30}   {3:>5}".format(
