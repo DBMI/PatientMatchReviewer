@@ -85,6 +85,7 @@ class ReviewerGui(wx.Dialog):
         #
         #   HEADER INFORMATION
         #
+        self.__text_controls: dict[str, wx.StaticText] = {}
         self.__add_single_info(data_field="PMI_ID")
         self.__add_single_info(data_field="OMOP_ID")
         self.__add_single_info(data_field="MRN")
@@ -92,7 +93,6 @@ class ReviewerGui(wx.Dialog):
         #   RECORD COMPARISON
         #
         self.__add_header_row()
-        self.__text_controls: dict[str, wx.StaticText] = {}
         self.__add_comparison_row(data_field="GIVEN_NAME")
         self.__add_comparison_row(data_field="FAMILY_NAME")
         self.__add_comparison_row(data_field="DOB")
@@ -203,7 +203,7 @@ class ReviewerGui(wx.Dialog):
         # Not until we load data.
         self.__radio_box.Disable()
 
-        # Leave extra row
+        # Leave extra row.
         self.__control_row += 1
         self.__my_grid.Add(
             self.__radio_box, pos=(self.__control_row, 0), flag=wx.ALIGN_LEFT, border=5
@@ -428,6 +428,7 @@ class ReviewerGui(wx.Dialog):
             flag=wx.EXPAND | wx.ALIGN_LEFT,
             border=5,
         )
+        self.__text_controls[data_field] = control_label_value
         self.__control_row += 1
 
     def __add_title(self, label: str) -> None:
@@ -529,7 +530,6 @@ class ReviewerGui(wx.Dialog):
 
     def __go_to_next_record(self) -> None:
         """Move to the next record."""
-
         if self.__row < len(self.df):
             self.__log.info("Go to next record.")
             self.__row += 1
@@ -541,6 +541,7 @@ class ReviewerGui(wx.Dialog):
 
             self.__left_button.Enable()
             self.__populate_data()
+            self.__set_radiobuttons()
             self.__update_progress()
 
     @staticmethod
@@ -635,6 +636,7 @@ class ReviewerGui(wx.Dialog):
 
         self.__right_button.Enable()
         self.__populate_data()
+        self.__set_radiobuttons()
         self.__update_progress()
 
     def __on_go_right(self, event: wx.CommandEvent) -> None:
@@ -646,6 +648,8 @@ class ReviewerGui(wx.Dialog):
         event
 
         """
+        decision: MatchDecision = self.__read_classification()
+        self.df.at[self.df.index[self.__row], "MATCH"] = decision
         self.__go_to_next_record()
 
     def __on_load_file(self, event: wx.CommandEvent) -> None:
@@ -693,6 +697,7 @@ class ReviewerGui(wx.Dialog):
 
                 self.__row = 0
                 self.__populate_data()
+                self.__set_radiobuttons()
                 self.__update_progress()
                 self.__enable_upon_load()
 
@@ -785,6 +790,40 @@ class ReviewerGui(wx.Dialog):
             # Determine background color based on the "SCORE" field.
             if "SCORE" in data_field and not "TOTAL_SCORE" in data_field:
                 self.__shade_row_based_on_score(control_label)
+
+    def __read_classification(self) -> MatchDecision:
+        """
+            Read radio buttons & return match decision.
+
+        Returns
+        -------
+        decision: MatchDecision
+        """
+        decision: MatchDecision = MatchDecision.UNSURE
+        selection: str = self.__radio_box.GetStringSelection()
+
+        if selection == MatchDecision.MATCH.value:
+            decision: MatchDecision = MatchDecision.MATCH
+        elif selection == MatchDecision.UNSURE.value:
+            decision: MatchDecision = MatchDecision.UNSURE
+        elif selection == MatchDecision.NO_MATCH.value:
+            decision: MatchDecision = MatchDecision.NO_MATCH
+
+        return decision
+
+    def __set_radiobuttons(self) -> None:
+        """
+        Pre-click the radiobuttons based on recorded classification.
+        """
+        decision: MatchDecision = self.df.at[self.df.index[self.__row], "MATCH"]
+
+        match decision:
+            case MatchDecision.MATCH:
+                self.__radio_box.SetStringSelection("MATCH")
+            case MatchDecision.UNSURE:
+                self.__radio_box.SetStringSelection("UNSURE")
+            case MatchDecision.NO_MATCH:
+                self.__radio_box.SetStringSelection("NO_MATCH")
 
     def __shade_row_based_on_score(self, score_label: wx.StaticText) -> None:
         """
