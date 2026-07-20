@@ -792,7 +792,11 @@ class ReviewerGui(wx.Dialog):
         for data_field in data_fields:
             data_value: str = self.df[data_field].iloc[self.__row]
             control_label: wx.StaticText = self.__text_controls[data_field]
-            control_label.SetLabel(data_value)
+
+            if isinstance(data_value, str):
+                control_label.SetLabel(data_value)
+            else:
+                control_label.SetLabel("")
 
             # Determine background color based on the "SCORE" field.
             if "SCORE" in data_field and not "TOTAL_SCORE" in data_field:

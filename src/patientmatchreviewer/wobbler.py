@@ -152,8 +152,31 @@ class Wobbler:
         # https://fsymbols.com/signs/tick/
         decision_marks: str = r".xXyY✓✔√✅❎☒☑✕✗✘✖❌"
 
-        # Are we inside a record (between two separator strings)?
-        in_record: bool = False
+        # Initialize variables.
+        found_first_record: bool = False
+        addr1_aou: str = ""
+        addr1_omop: str = ""
+        addr1_score: int = 0
+        dob_aou: str = ""
+        dob_omop: str = ""
+        dob_score: int = 0
+        family_name_aou: str = ""
+        family_name_omop: str = ""
+        family_name_score: int = 0
+        given_name_aou: str = ""
+        given_name_omop: str = ""
+        given_name_score: int = 0
+        match: MatchDecision = MatchDecision.NONE
+        mrn: str = ""
+        omop_id: str = ""
+        phone1_aou: str = ""
+        phone1_omop: str = ""
+        phone1_score: int = 0
+        phone2_aou: str = ""
+        phone2_omop: str = ""
+        phone2_score: int = 0
+        pmi_id: str = ""
+        total_score: int = 0
 
         try:
             with open(match_file, "r", encoding="utf-8-sig", newline="") as file:
@@ -162,13 +185,8 @@ class Wobbler:
                     if line.startswith(sep):
                         num_separators_found += 1
 
-                        # Don't start looking for data until we've seen TWO separator strings.
-                        if num_separators_found < 2:
-                            continue
-
-                        # If already IN a record, then the separator marks the end of the record.
-                        if in_record:
-                            # Once we've read the whole record, record this possible match.
+                        if found_first_record:
+                            # The separator marks the end of the record.
                             new_row: list = [
                                 addr1_aou,
                                 addr1_omop,
@@ -195,47 +213,52 @@ class Wobbler:
                                 total_score,
                             ]
                             data_rows.append(new_row)
-                            in_record = False
-                            continue
 
-                    # We're starting a new record--reset the parser.
-                    in_record = True
-                    addr1_aou: str = ""
-                    addr1_omop: str = ""
-                    addr1_score: int = 0
-                    dob_aou: str = ""
-                    dob_omop: str = ""
-                    dob_score: int = 0
-                    family_name_aou: str = ""
-                    family_name_omop: str = ""
-                    family_name_score: int = 0
-                    given_name_aou: str = ""
-                    given_name_omop: str = ""
-                    given_name_score: int = 0
-                    match: MatchDecision = MatchDecision.NONE
-                    mrn: str = ""
-                    omop_id: str = ""
-                    phone1_aou: str = ""
-                    phone1_omop: str = ""
-                    phone1_score: int = 0
-                    phone2_aou: str = ""
-                    phone2_omop: str = ""
-                    phone2_score: int = 0
-                    pmi_id: str = ""
-                    total_score: int = 0
+                            # We're starting a new record--reset the parser.
+                            addr1_aou = ""
+                            addr1_omop = ""
+                            addr1_score = 0
+                            dob_aou = ""
+                            dob_omop = ""
+                            dob_score = 0
+                            family_name_aou = ""
+                            family_name_omop = ""
+                            family_name_score = 0
+                            given_name_aou = ""
+                            given_name_omop = ""
+                            given_name_score = 0
+                            match = MatchDecision.NONE
+                            mrn = ""
+                            omop_id = ""
+                            phone1_aou = ""
+                            phone1_omop = ""
+                            phone1_score = 0
+                            phone2_aou = ""
+                            phone2_omop = ""
+                            phone2_score = 0
+                            pmi_id = ""
+                            total_score = 0
+
+                        # We're still reading a separator--so go to the next line.
+                        continue
 
                     # Don't start looking for data until we've seen TWO separator strings.
                     if num_separators_found < 2:
                         continue
 
+                    # OK--we're into the data.
+                    found_first_record = True
+
                     # Split on MORE than one space (or on ":").
                     # This way, "123 Maple Street" stays together
                     # and "Total Score: 123" gets split.
-                    # CAUTION: Don't believe automated hint that "?:" on next line is unnecessary.
-                    tokens_raw: list = re.split(r"(\s{2,}|:)", line)
+                    #
+                    # HEY!: Don't believe automated hint that "?:" on next line is unnecessary.
+                    #
+                    tokens_raw: list = re.split(r"(?:\s{2,}|:)", line)
 
                     # Discard empty strings & strip newlines.
-                    tokens: list = [s.strip("\r") for s in tokens_raw if s]
+                    tokens: list = [s.strip("\r") for s in tokens_raw if s.strip()]
 
                     match len(tokens):
                         case 0:
