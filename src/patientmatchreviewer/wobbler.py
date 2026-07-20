@@ -198,32 +198,31 @@ class Wobbler:
                             in_record = False
                             continue
 
-                        in_record = True
-
-                        # So we're starting a new record--reset the parser.
-                        addr1_aou: str = ""
-                        addr1_omop: str = ""
-                        addr1_score: int = 0
-                        dob_aou: str = ""
-                        dob_omop: str = ""
-                        dob_score: int = 0
-                        family_name_aou: str = ""
-                        family_name_omop: str = ""
-                        family_name_score: int = 0
-                        given_name_aou: str = ""
-                        given_name_omop: str = ""
-                        given_name_score: int = 0
-                        match: MatchDecision = MatchDecision.NONE
-                        mrn: str = ""
-                        omop_id: str = ""
-                        phone1_aou: str = ""
-                        phone1_omop: str = ""
-                        phone1_score: int = 0
-                        phone2_aou: str = ""
-                        phone2_omop: str = ""
-                        phone2_score: int = 0
-                        pmi_id: str = ""
-                        total_score: int = 0
+                    # We're starting a new record--reset the parser.
+                    in_record = True
+                    addr1_aou: str = ""
+                    addr1_omop: str = ""
+                    addr1_score: int = 0
+                    dob_aou: str = ""
+                    dob_omop: str = ""
+                    dob_score: int = 0
+                    family_name_aou: str = ""
+                    family_name_omop: str = ""
+                    family_name_score: int = 0
+                    given_name_aou: str = ""
+                    given_name_omop: str = ""
+                    given_name_score: int = 0
+                    match: MatchDecision = MatchDecision.NONE
+                    mrn: str = ""
+                    omop_id: str = ""
+                    phone1_aou: str = ""
+                    phone1_omop: str = ""
+                    phone1_score: int = 0
+                    phone2_aou: str = ""
+                    phone2_omop: str = ""
+                    phone2_score: int = 0
+                    pmi_id: str = ""
+                    total_score: int = 0
 
                     # Don't start looking for data until we've seen TWO separator strings.
                     if num_separators_found < 2:
@@ -233,7 +232,7 @@ class Wobbler:
                     # This way, "123 Maple Street" stays together
                     # and "Total Score: 123" gets split.
                     # CAUTION: Don't believe automated hint that "?:" on next line is unnecessary.
-                    tokens_raw: list = re.split(r"(?:\s{2,}|:)", line)
+                    tokens_raw: list = re.split(r"(\s{2,}|:)", line)
 
                     # Discard empty strings & strip newlines.
                     tokens: list = [s.strip("\r") for s in tokens_raw if s]
