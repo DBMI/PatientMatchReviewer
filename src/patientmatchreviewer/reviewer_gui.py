@@ -9,7 +9,7 @@ import time
 from configparser import ConfigParser
 from pathlib import Path
 from tkinter import filedialog
-
+from datetime import datetime
 import pandas
 import wx
 import wx.adv
@@ -759,14 +759,21 @@ class ReviewerGui(wx.Dialog):
         event
 
         """
+        # Record the final potential match.
+        decision: MatchDecision = self.__read_classification()
+        self.df.at[self.df.index[self.__row], "MATCH"] = decision
+
         # Synthesize new filename as <old file name>_reviewed.txt
         full_file_path: Path = Path(
             self.__config["Settings"]["manual_decision_file_path"]
         )
         just_the_filename: str = full_file_path.stem
         ext: str = full_file_path.suffix
+        timestamp_filesafe: str = datetime.now().strftime("%Y%m%d_%H%M%S")
         new_file: str = str(
-            full_file_path.with_name(f"{just_the_filename}_reviewed{ext}")
+            full_file_path.with_name(
+                f"{just_the_filename}_reviewed_{timestamp_filesafe}{ext}"
+            )
         )
 
         if Wobbler.write_wobbler_file(match_file=new_file, df=self.df, log=self.__log):
