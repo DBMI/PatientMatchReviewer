@@ -1,6 +1,6 @@
 [project]
 name = "patientmatchreviewer"
-version = "0.3.1"
+version = "0.3.2"
 description = "GUI to help user review possible patient matches."
 authors = [
     { name = "Kevin J. Delaney", email = "kjdelaney@health.ucsd.edu"}
@@ -33,4 +33,4 @@ build-backend = "poetry.core.masonry.api"
 
 
 [project.scripts]
-review_manual_matches = "patientmatch_reviewer.__main__"
+review_manual_matches = "patientmatch_reviewer.__main__:main"
