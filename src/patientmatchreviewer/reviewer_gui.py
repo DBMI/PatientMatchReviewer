@@ -3,9 +3,10 @@ Module: Contains class ReviewerGui, which creates the GUI
         users can use to review patient matching data.
 """
 
+import io
 import logging
-import os
 from configparser import ConfigParser
+from importlib import resources
 from pathlib import Path
 from tkinter import filedialog
 from datetime import datetime
@@ -13,7 +14,7 @@ import pandas
 import wx
 import wx.adv
 
-from patientmatchreviewer.common import get_config, resource_path, write_config
+from patientmatchreviewer.common import get_config, write_config
 from patientmatchreviewer.wobbler import MatchDecision, Wobbler
 
 
@@ -68,9 +69,6 @@ class ReviewerGui(wx.Dialog):
         # Add title.
         self.__control_row: int = 0
         self.__add_title(label="Review possible patient matches")
-
-        # Where to find image files.
-        self.__image_directory: str = resource_path(r"pictures")
         #
         #   LOAD BUTTON
         #
@@ -294,12 +292,18 @@ class ReviewerGui(wx.Dialog):
         #
         #   LEFT BUTTON
         #
-        img: wx.Image = wx.Image(
-            os.path.join(self.__image_directory, "left_arrow.png"), wx.BITMAP_TYPE_PNG
+        image_data = (
+            resources.files("patientmatchreviewer")
+            .joinpath("pictures/left_arrow.png")
+            .read_bytes()
         )
 
+        # Load into a stream and create wx.Image.
+        stream = io.BytesIO(image_data)
+        img: wx.Image = wx.ImageFromStream(stream, wx.BITMAP_TYPE_PNG)
+
         if not img.IsOk():
-            print("Failed to load image")
+            self.__log.error("Failed to load left arrow image.")
 
         self.__left_button: wx.BitmapButton = wx.BitmapButton(
             self.__my_panel,
@@ -317,9 +321,19 @@ class ReviewerGui(wx.Dialog):
         #
         #   RIGHT BUTTON
         #
-        img = wx.Image(
-            os.path.join(self.__image_directory, "right_arrow.png"), wx.BITMAP_TYPE_PNG
+        image_data = (
+            resources.files("patientmatchreviewer")
+            .joinpath("pictures/right_arrow.png")
+            .read_bytes()
         )
+
+        # Load into a stream and create wx.Image.
+        stream = io.BytesIO(image_data)
+        img: wx.Image = wx.ImageFromStream(stream, wx.BITMAP_TYPE_PNG)
+
+        if not img.IsOk():
+            self.__log.error("Failed to load right arrow image.")
+
         self.__right_button: wx.BitmapButton = wx.BitmapButton(
             self.__my_panel,
             bitmap=wx.BitmapBundle.FromBitmap(wx.Bitmap(img)),

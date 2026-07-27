@@ -2,6 +2,8 @@
 Contains MySplashScreen class.
 """
 
+from importlib import resources
+import io
 import wx
 import wx.adv
 
@@ -20,10 +22,16 @@ class MySplashScreen(wx.adv.SplashScreen):
         ----------
         filename: str
         """
-        bmp: wx.Bitmap = wx.Bitmap(filename, wx.BITMAP_TYPE_PNG)
+        # Load file bytes from package resources
+        data = resources.files("patientmatchreviewer").joinpath(filename).read_bytes()
+
+        # Read into a stream and convert to bitmap.
+        stream = io.BytesIO(data)
+        image = wx.Image(stream)
+
         wx.adv.SplashScreen.__init__(
             self,
-            bmp,
+            wx.Bitmap(image),
             wx.adv.SPLASH_CENTRE_ON_SCREEN | wx.adv.SPLASH_TIMEOUT,
             2500,
             None,
@@ -34,7 +42,7 @@ class MySplashScreen(wx.adv.SplashScreen):
 if __name__ == "__main__":
     app: wx.App = wx.App()
     splash_frame: MySplashScreen = MySplashScreen(
-        r"../../pictures/UCSD_school_of_medicine.png"
+        r"pictures/UCSD_school_of_medicine.png"
     )
     splash_frame.Show()
     app.MainLoop()

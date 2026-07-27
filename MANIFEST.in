@@ -1,1 +1,1 @@
-recursive-include src/pictures *.png
+recursive-include src/patientmatchreviewer/pictures *.png
