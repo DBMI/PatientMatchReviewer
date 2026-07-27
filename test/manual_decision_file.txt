@@ -1,0 +1,76 @@
+----------------------------------------------
+
+PMI_ID               pmi_id
+OMOP ID             omop_id
+MRN                     mrn
+
+first       given_name_aou                   given_name_omop                  given_name_score
+last        family_name_aou                  family_name_omop                 family_name_score
+dob         dob_aou                          dob_omop                         dob_score
+addr1       addr1_aou                        addr1_omop                       addr1_score
+phone1      phone1_aou                       phone1_omop                      phone1_score
+phone2      phone2_aou                       phone2_omop                      phone2_score
+
+Total Score: total_score
+
+Check ☑ ONE of these lines:
+☐ MATCH
+☐ NO_MATCH
+☐ UNSURE
+----------------------------------------------
+
+PMI_ID               P1111
+OMOP ID               2222
+MRN                   3333
+
+first       george                           george                             100
+last        washington                       washingtone                         80
+dob         1732-02-22                       1732-02-22                         100
+addr1       3200 mt vernon                   3200 mt vernon hwy                  80
+phone1      7037803600                       7037803600                         100
+phone2      7037803600                       7037803600                         100
+
+Total Score:  680
+
+Check ☑ ONE of these lines:
+☐ MATCH
+☐ NO_MATCH
+☐ UNSURE
+----------------------------------------------
+
+PMI_ID             P2222
+OMOP ID             3333
+MRN                 4444
+
+first       thomas                           tom                                 80
+last        jefferson                        jefferson                          100
+dob         1743-04-13                       1743-04-13                         100
+addr1       1050 monticello loop             1050 monticello lp                  93
+phone1      4349849800                       4349849800                         100
+phone2      4349849800                       4349849800                         100
+
+Total Score:  677
+
+Check ☑ ONE of these lines:
+☐ MATCH
+☐ NO_MATCH
+☐ UNSURE
+----------------------------------------------
+
+PMI_ID              P3333
+OMOP ID              4444
+MRN                  5555
+
+first       ben	                             benjamin                            70
+last        franklin                         franklin                           100
+dob         1706-01-17                       1706-01-17                         100
+addr1       222 north 20th street            222 n 20th st                       70
+phone1      8774002348                       8774002348                         100
+phone2      8774002348                       8774002348                         100
+
+Total Score:  675
+
+Check ☑ ONE of these lines:
+☐ MATCH
+☐ NO_MATCH
+☐ UNSURE

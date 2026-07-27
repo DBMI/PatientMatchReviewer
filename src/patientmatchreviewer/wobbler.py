@@ -360,6 +360,34 @@ class Wobbler:
 
                     continue
 
+            # Capture the last record.
+            new_row = [
+                addr1_aou,
+                addr1_omop,
+                addr1_score,
+                dob_aou,
+                dob_omop,
+                dob_score,
+                family_name_aou,
+                family_name_omop,
+                family_name_score,
+                given_name_aou,
+                given_name_omop,
+                given_name_score,
+                match,
+                mrn,
+                omop_id,
+                phone1_aou,
+                phone1_omop,
+                phone1_score,
+                phone2_aou,
+                phone2_omop,
+                phone2_score,
+                pmi_id,
+                total_score,
+            ]
+            data_rows.append(new_row)
+
             # Convert list to dataframe.
             df: pandas.DataFrame = pandas.DataFrame(data_rows, columns=column_names)
             return df

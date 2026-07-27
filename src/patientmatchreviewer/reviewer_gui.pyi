@@ -9,11 +9,10 @@ import wx.adv
 from patientmatchreviewer.wobbler import MatchDecision
 
 class ReviewerGui(wx.Dialog):
-    def __init__(self, log: logging.Logger) -> None:
+    def __init__(self, log: logging.Logger, filename: str = "") -> None:
         self.df: pandas.DataFrame = None
         self.__config: ConfigParser = None
         self.__control_row: int = 0
-        self.__text_controls: dict = {}
         self.__image_directory: str = None
         self.__left_button: wx.Button = None
         self.__log: logging.Logger = None
@@ -25,6 +24,7 @@ class ReviewerGui(wx.Dialog):
         self.__right_button: wx.Button = None
         self.__row: int = 0
         self.__save_button: wx.Button = None
+        self.__text_controls: dict = {}
 
     def __add_comparison_row(self, data_field: str) -> None: ...
     def __add_decision_buttons(self) -> None: ...
@@ -39,6 +39,7 @@ class ReviewerGui(wx.Dialog):
     def __build_row(self, data_field: str) -> tuple[wx.Panel, wx.GridBagSizer]: ...
     def __enable_upon_load(self) -> None: ...
     def __go_to_next_record(self) -> None: ...
+    def __load_file(self, file_path: str) -> None: ...
     @staticmethod
     def __map_score_to_color(score: str) -> wx.Colour: ...
     def __on_box_select(self, event: wx.CommandEvent) -> None: ...

@@ -5,7 +5,6 @@ Module: Contains class ReviewerGui, which creates the GUI
 
 import logging
 import os
-import time
 from configparser import ConfigParser
 from pathlib import Path
 from tkinter import filedialog
@@ -31,7 +30,7 @@ class ReviewerGui(wx.Dialog):
     no public methods
     """
 
-    def __init__(self, log: logging.Logger) -> None:
+    def __init__(self, log: logging.Logger, filename: str = "") -> None:
         """
         Initialize the GUI.
 
@@ -66,7 +65,7 @@ class ReviewerGui(wx.Dialog):
         # Create grid.
         self.__my_grid: wx.GridBagSizer = wx.GridBagSizer(hgap=5, vgap=5)
 
-        # Add title
+        # Add title.
         self.__control_row: int = 0
         self.__add_title(label="Review possible patient matches")
 
@@ -77,7 +76,7 @@ class ReviewerGui(wx.Dialog):
         #
         self.df: pandas.DataFrame
         self.__add_load_button()
-        # Leave empty row
+        # Leave empty row.
         self.__control_row += 1
 
         # Keep track of row in dataframe.
@@ -133,6 +132,10 @@ class ReviewerGui(wx.Dialog):
         self.SetSizer(sizer)
         self.Layout()
         self.Fit()
+
+        if filename and len(filename) > 0:
+            self.__load_file(filename)
+
         self.ShowModal()
 
     def __add_comparison_row(self, data_field: str) -> None:
@@ -544,6 +547,40 @@ class ReviewerGui(wx.Dialog):
             self.__set_radiobuttons()
             self.__update_progress()
 
+    def __load_file(self, file_path: str) -> None:
+        """
+            - Reads file into DataFrame
+            - Populates the controls from dataframe first row.
+
+        Parameters
+        ----------
+        file_path: str
+        """
+        if file_path:
+            # Save for next time.
+            self.__config["Settings"]["manual_decision_file_path"] = file_path
+            write_config(self.__config, self.__log)
+
+            try:
+                # Read match file.
+                self.df = Wobbler.read_wobbler_file(
+                    match_file=file_path, log=self.__log
+                )
+
+                if self.df.empty:
+                    self.__log.error(f"Unable to read file {file_path}.")
+                    return
+
+                self.__row = 0
+                self.__populate_data()
+                self.__set_radiobuttons()
+                self.__update_progress()
+                self.__enable_upon_load()
+
+            except FileNotFoundError as e:
+                self.__log.exception(f"File {file_path} not found.")
+                raise
+
     @staticmethod
     def __map_score_to_color(score: str) -> wx.Colour:
         """
@@ -656,8 +693,7 @@ class ReviewerGui(wx.Dialog):
         """
         Event handler for when user presses LOAD button:
             - Asks for file
-            - Reads file into DataFrame
-            - Populates the controls from dataframe first row.
+            - Hands off to __load_file()
 
         Parameters
         ----------
@@ -680,30 +716,7 @@ class ReviewerGui(wx.Dialog):
             initialdir=initial_dir,  # Optional: Set an initial directory
         )
 
-        if file_path:
-            # Save for next time.
-            self.__config["Settings"]["manual_decision_file_path"] = file_path
-            write_config(self.__config, self.__log)
-
-            try:
-                # Read match file.
-                self.df = Wobbler.read_wobbler_file(
-                    match_file=file_path, log=self.__log
-                )
-
-                if self.df.empty:
-                    self.__log.error(f"Unable to read file {file_path}.")
-                    return
-
-                self.__row = 0
-                self.__populate_data()
-                self.__set_radiobuttons()
-                self.__update_progress()
-                self.__enable_upon_load()
-
-            except FileNotFoundError as e:
-                self.__log.exception(f"File {file_path} not found.")
-                raise
+        self.__load_file(file_path)
 
     def __on_match(self, event: wx.CommandEvent) -> None:
         """
