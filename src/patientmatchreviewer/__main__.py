@@ -8,7 +8,7 @@ import os
 
 import wx.adv
 
-from patientmatchreviewer.common import get_logging_directory, resource_path
+from patientmatchreviewer.common import get_logging_directory
 from patientmatchreviewer.my_logging import setup_logging
 from patientmatchreviewer.reviewer_gui import ReviewerGui
 from patientmatchreviewer.splash import MySplashScreen
@@ -50,7 +50,7 @@ def main():
 
         # Display splash screen.
         app: wx.App = wx.App(redirect=False)
-        splash = MySplashScreen(resource_path("pictures/UCSD_school_of_medicine.png"))
+        splash = MySplashScreen("pictures/UCSD_school_of_medicine.png")
         splash.Show()
         app.Yield()
 

@@ -278,29 +278,6 @@ def parse_version_file() -> str:
         return ""  # pragma: no cover
 
 
-# https://stackoverflow.com/a/13790741/20241849
-def resource_path(relative_path: str) -> str:
-    """
-    Given name of resource, builds absolute path to resource, works for dev and PyInstaller.
-
-    Parameters
-    ----------
-    relative_path: str
-
-    Returns
-    -------
-    base_path: str
-    """
-    if getattr(sys, "frozen", False):  # pragma: no cover
-        # Running in a PyInstaller bundle.
-        base_path = sys._MEIPASS  # pylint: disable=W0212
-    else:
-        # Running in a normal Python environment.
-        base_path = os.getcwd()
-
-    return str(os.path.join(base_path, relative_path))
-
-
 def write_config(
     config: ConfigParser, log: logging.Logger, config_file: str = ""
 ) -> None:

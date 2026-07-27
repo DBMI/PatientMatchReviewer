@@ -12,7 +12,6 @@ class ReviewerGui(wx.Dialog):
         self.df: pandas.DataFrame = None
         self.__config: ConfigParser = None
         self.__control_row: int = 0
-        self.__image_directory: str = None
         self.__left_button: wx.Button = None
         self.__log: logging.Logger = None
         self.__my_grid: wx.GridBagSizer = None
