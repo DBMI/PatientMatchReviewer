@@ -8,10 +8,10 @@ import os
 
 import wx.adv
 
-from src.patientmatchreviewer.common import get_logging_directory, resource_path
-from src.patientmatchreviewer.my_logging import setup_logging
-from src.patientmatchreviewer.reviewer_gui import ReviewerGui
-from src.patientmatchreviewer.splash import MySplashScreen
+from common import get_logging_directory, resource_path
+from my_logging import setup_logging
+from reviewer_gui import ReviewerGui
+from splash import MySplashScreen
 
 
 def main():

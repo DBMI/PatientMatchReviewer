@@ -13,8 +13,8 @@ import pandas
 import wx
 import wx.adv
 
-from src.patientmatchreviewer.common import get_config, resource_path, write_config
-from src.patientmatchreviewer.wobbler import MatchDecision, Wobbler
+from common import get_config, resource_path, write_config
+from wobbler import MatchDecision, Wobbler
 
 
 class ReviewerGui(wx.Dialog):
