@@ -13,7 +13,8 @@ from src.patientmatchreviewer.my_logging import setup_logging
 from src.patientmatchreviewer.reviewer_gui import ReviewerGui
 from src.patientmatchreviewer.splash import MySplashScreen
 
-if __name__ == "__main__":
+
+def main():
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="A GUI-based tool to retrieve All of Us participant data using the InSite API."
     )
@@ -63,3 +64,7 @@ if __name__ == "__main__":
             pass
 
         app.MainLoop()
+
+
+if __name__ == "__main__":
+    main()
