@@ -48,7 +48,7 @@ class ReviewerGui(wx.Dialog):
             parent=None,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
             size=wx.Size(600, 650),
-            title="Review patient matching data data",
+            title="Review patient matching data",
         )  # pylint: disable=no-member
 
         sizer: wx.BoxSizer = wx.BoxSizer(wx.VERTICAL)
