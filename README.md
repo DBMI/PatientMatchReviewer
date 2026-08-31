@@ -1,3 +1,6 @@
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+![Last Commit Date](https://img.shields.io/github/last-commit/dbmi/PatientMatchReviewer)
+
 # Patient Match Reviewer
 This app allows a user to quickly review a "Wobbler" file that shows potential matches betwen patients in two different databases.
 
